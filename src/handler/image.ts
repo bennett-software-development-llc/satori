@@ -18,31 +18,34 @@ const SVG = 'image/svg+xml'
 function parseJPEG(buf: ArrayBuffer) {
   const view = new DataView(buf)
 
-  // Skip magic bytes
-  let offset = 4
+  // Check for JPEG magic number (0xFFD8)
+  if (view.getUint16(0) !== 0xffd8) {
+    throw new TypeError('Invalid JPEG: Missing SOI marker')
+  }
+
+  let offset = 2 // Start after the SOI marker
 
   const len = view.byteLength
   while (offset < len) {
-    const i = view.getUint16(offset, false)
-
-    if (i > len) {
-      throw new TypeError('Invalid JPEG')
+    const segmentLength = view.getUint16(offset, false)
+    if (segmentLength + offset > len) {
+      throw new TypeError('Invalid JPEG: Incomplete segment')
     }
 
-    const next = view.getUint8(i + 1 + offset)
-    if (next === 0xc0 || next === 0xc1 || next === 0xc2) {
-      return [
-        view.getUint16(i + 7 + offset, false),
-        view.getUint16(i + 5 + offset, false),
-      ] as [number, number]
+    const marker = view.getUint8(offset + 2)
+
+    // Check for Start of Frame markers
+    if (marker === 0xc0 || marker === 0xc1 || marker === 0xc2) {
+      const height = view.getUint16(offset + 5, false)
+      const width = view.getUint16(offset + 7, false)
+      return [width, height] as [number, number]
     }
 
-    // TODO: Support orientations from EXIF.
-
-    offset += i + 2
+    // Move to the next segment
+    offset += segmentLength + 2
   }
 
-  throw new TypeError('Invalid JPEG')
+  throw new TypeError('Invalid JPEG: No frame found')
 }
 
 function parseGIF(buf: ArrayBuffer) {
