@@ -36,7 +36,6 @@
     }
   },
   "scripts": {
-    "prepare": "husky install",
     "dev": "concurrently \"pnpm dev:default\" \"pnpm dev:wasm\"",
     "dev:default": "NODE_ENV=development tsup src/index.ts --watch --ignore-watch playground",
     "dev:wasm": "WASM=1 NODE_ENV=development tsup src/index.ts --watch --ignore-watch playground",
@@ -53,7 +52,7 @@
     "prettier-check": "prettier --check .",
     "prettier-fix": "prettier --write --list-different . --cache",
     "ci-check": "concurrently \"pnpm prettier-check\" \"pnpm test-type\" \"pnpm lint\"",
-    "postinstall": "NODE_ENV=production pnpm run build:default && pnpm run build:wasm"
+    "postinstall": "NODE_ENV=production pnpm install && pnpm run build:default && pnpm run build:wasm"
   },
   "lint-staged": {
     "*.{ts,tsx}": [
